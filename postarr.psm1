@@ -1,19 +1,3 @@
-$script:tmdbapi = $null
-$script:plextoken = $null
-$script:plexurl = $null
-
-function Set-TMDDApi {
-    [CmdletBinding()]
-    param (
-        [string]
-        $API
-    )
-    
-    $script:tmdbconfig = @{ }
-
-    $script:tmdbconfig.add("API", $API)
-}
-
 function Get-TMDBMovie {
     [CmdletBinding()]
     param (
@@ -24,13 +8,16 @@ function Get-TMDBMovie {
         $Name,
 
         [string]
-        $IMDBID
+        $IMDBID,
+
+        [string]
+        $TMDBAPI = $env:tmdbapi
     )
     
     begin {
         $IRMParams = @{
             Headers     = @{
-                Authorization = ("Bearer {0}") -f $script:tmdbconfig["API"]
+                Authorization = ("Bearer {0}") -f $TMDBAPI
             }
             ContentType = "application/json"
         }
@@ -47,8 +34,8 @@ function Get-TMDBMovie {
                 (Invoke-RestMethod -Uri $URI @IRMParams).Results
             }
             'IMDBID' {
-                $URI = "https://api.themoviedb.org/3/find/{0}?api_key={1}&external_source=imdb_id" -f $IMDBID,$script:tmdbapi
-                (Invoke-RestMethod -Uri $URI).movie_results
+                $URI = "https://api.themoviedb.org/3/find/{0}?&external_source=imdb_id" -f $IMDBID,$TMDBAPI
+                (Invoke-RestMethod -Uri $URI @IRMParams).movie_results
             }
             Default {
                 if ($ID -and $Name) {
@@ -72,7 +59,7 @@ function Get-TMDBConfiguration {
     begin {
         $IRMParams = @{
             Headers     = @{
-                Authorization = ("Bearer {0}") -f $script:tmdbconfig["API"]
+                Authorization = ("Bearer {0}") -f $env:tmdbconfig["API"]
             }
             ContentType = "application/json"
         }
