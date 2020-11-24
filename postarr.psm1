@@ -74,3 +74,5 @@ function Get-TMDBConfiguration {
         
     }
 }
+
+Export-ModuleMember -Function *

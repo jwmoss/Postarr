@@ -1,7 +1,7 @@
 [cmdletbinding()]
 param()
 
-Import-Module -Name ./postarr.psm1 -ErrorAction Stop -Verbose:$false
+Import-Module -Name /opt/microsoft/powershell/7/Modules/Postarr/postarr.psm1 -ErrorAction Stop -Verbose:$false
 
 ## Plex token
 $plextoken = $env:plextoken
