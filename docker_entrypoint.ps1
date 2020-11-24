@@ -7,7 +7,7 @@ Import-Module -Name /opt/microsoft/powershell/7/Modules/Postarr/postarr.psm1 -Er
 $plextoken = $env:plextoken
 $tmdbapi_v4 = $env:tmdbapi
 $plexURL = $env:plexurl
-$4kmovielibrary = $env:4klibraryname
+$4kmovielibrary = $env:4kmovielibrary
 
 ## Plex URL
 $url = "$($plexURL)/library/sections?X-Plex-Token=$plextoken"
@@ -18,13 +18,22 @@ Write-Output "Using Plex Base URL: $plexURL"
 ## Get the results of the library
 $results = Invoke-RestMethod -Uri $url -Method Get -SkipCertificateCheck
 
+if ($null -eq $results) {
+    throw "can't query plex using $url"
+}
+
 ## Get the 4K movie library
-$4kmovie = $results.MediaContainer.Directory | Where-Object { $PSItem.Title -eq $4kmovielibrary }
+$4kmovie = $results.MediaContainer.Directory | Where-Object { $_.Title -eq $4kmovielibrary }
+
+if ($null -eq $4kmovie) {
+    throw "can't find 4k movies library"
+}
 
 ## Get all the 4K movies
-Write-Output "Using the following library: $plexURL/library/sections/$($4kmovie.key)/all?X-Plex-Token=$plextoken"
+$url = "$plexURL/library/sections/$($4kmovie.key)/all?X-Plex-Token=$plextoken"
+Write-Output $url
 
-$4kmovieplex = Invoke-RestMethod -uri ("$plexURL/library/sections/$($4kmovie.key)/all?X-Plex-Token=$plextoken").replace('"','') -SkipCertificateCheck |
+$4kmovieplex = Invoke-RestMethod -uri $url -SkipCertificateCheck |
 Select-Object -ExpandProperty MediaContainer | Select-object -ExpandProperty Video
 
 foreach ($m in $4kmovieplex) {
@@ -33,7 +42,7 @@ foreach ($m in $4kmovieplex) {
 
     if (-not (Test-Path "/data/$($tmdb.Id)")) {
         Write-Output "Creating folder for $($m.title)" 
-        $null = New-Item -Path "/data" -Name $tmdb.Id -ItemType Directory
+        $null = New-Item -Path "/data" -Name $tmdb.Id -ItemType Directory -Force
         Write-Output "Downloading the $($m.title)"
         Invoke-WebRequest -Uri "https://image.tmdb.org/t/p/original$($tmdb.poster_path)" -OutFile "/data/$($tmdb.id)/poster.jpg"
         Write-Output "Processing $($m.title) - $($tmdb.Id) with magick"
